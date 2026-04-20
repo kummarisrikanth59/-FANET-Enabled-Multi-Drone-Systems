@@ -1,0 +1,123 @@
+%% Drone Simulation Data Generation
+numDrones = 10;
+numSteps = 3000;
+t = 1:numSteps;
+active_steps = 850; 
+
+% Generate mock data to match your parameters
+speed_data = zeros(numDrones, numSteps);
+error_data = zeros(numDrones, numSteps);
+conn_degree = zeros(numDrones, numSteps);
+detections = zeros(numDrones, numSteps);
+
+for d = 1:numDrones
+    % Active phase
+    speed_data(d, 1:active_steps) = rand(1, active_steps) * 0.19;
+    error_data(d, 1:active_steps) = abs(randn(1, active_steps) * 1.5);
+    conn_degree(d, 1:active_steps) = randi([3, 9], 1, active_steps);
+    detections(d, 1:active_steps) = randi([0, 5], 1, active_steps);
+    
+    % Inactive phase
+    speed_data(d, active_steps+1:end) = 0; 
+    error_data(d, active_steps+1:end) = 0; 
+    
+    if mod(d, 3) == 0
+        conn_degree(d, active_steps+1:end) = 3;
+        detections(d, active_steps+1:end) = 1;
+    elseif mod(d, 2) == 0
+        conn_degree(d, active_steps+1:end) = 4;
+        detections(d, active_steps+1:end) = 2;
+    else
+        conn_degree(d, active_steps+1:end) = 5;
+        detections(d, active_steps+1:end) = 3;
+    end
+end
+
+% --- SEPARATE FIGURES GENERATION ---
+
+%% 1. Connectivity Degree vs Time
+figure('Name', 'Connectivity Degree');
+plot(t, conn_degree');
+title('Per-Drone Connectivity Degree vs Time', 'FontWeight', 'bold');
+xlabel('Step'); ylabel('Neighbors (degree)');
+xlim([0 3000]); ylim([2 9]);
+grid on; 
+legend(arrayfun(@(x) sprintf('D%d', x-1), 1:numDrones, 'UniformOutput', false), 'Location', 'eastoutside');
+
+%% 2. Detections vs Time
+figure('Name', 'Detections');
+plot(t, detections');
+title('Per-Drone Detections vs Time', 'FontWeight', 'bold');
+xlabel('Step'); ylabel('Detections count');
+xlim([0 3000]); ylim([0 5]);
+grid on; 
+legend(arrayfun(@(x) sprintf('D%d', x-1), 1:numDrones, 'UniformOutput', false), 'Location', 'eastoutside');
+
+%% 3. Tracking Error vs Time
+figure('Name', 'Tracking Error');
+plot(t, error_data');
+title('Per-Drone Tracking Error vs Time', 'FontWeight', 'bold');
+xlabel('Step'); ylabel('Error (km)');
+xlim([0 3000]); ylim([0 7]);
+grid on; 
+legend(arrayfun(@(x) sprintf('D%d', x-1), 1:numDrones, 'UniformOutput', false), 'Location', 'eastoutside');
+
+%% 4. Speed vs Time
+figure('Name', 'Speed');
+plot(t, speed_data');
+title('Per-Drone Speed vs Time', 'FontWeight', 'bold');
+xlabel('Step'); ylabel('Speed (km/step)');
+xlim([0 3000]); ylim([0 0.2]);
+grid on; 
+legend(arrayfun(@(x) sprintf('D%d', x-1), 1:numDrones, 'UniformOutput', false), 'Location', 'eastoutside');
+
+%% 5. Speed Heatmap
+sample_idx = round(linspace(1, active_steps, 300)); 
+figure('Name', 'Speed Heatmap');
+imagesc(speed_data(:, sample_idx));
+colormap(parula); colorbar; 
+title('Speed Heatmap (Drone vs Time)', 'FontWeight', 'bold');
+xlabel('Sample index'); ylabel('Drone ID');
+yticks(1:10);
+
+%% 6. Error Heatmap
+figure('Name', 'Error Heatmap');
+imagesc(error_data(:, sample_idx));
+colormap(parula); colorbar; 
+title('Error Heatmap (Drone vs Time)', 'FontWeight', 'bold');
+xlabel('Sample index'); ylabel('Drone ID');
+yticks(1:10);
+
+% Statistical Calculations for Bar Charts
+avg_speed = mean(speed_data(:, 1:active_steps), 2);
+avg_error = mean(error_data(:, 1:active_steps), 2);
+total_detect = sum(detections(:, 1:active_steps), 2);
+avg_deg = mean(conn_degree, 2);
+
+%% 7. Avg Speed Bar
+figure('Name', 'Average Speed');
+bar(avg_speed);
+title('Avg Speed per Drone', 'FontWeight', 'bold'); 
+xlabel('Drone ID'); ylabel('km/step');
+xticks(1:10); grid on;
+
+%% 8. Avg Error Bar
+figure('Name', 'Average Error');
+bar(avg_error);
+title('Avg Error per Drone', 'FontWeight', 'bold'); 
+xlabel('Drone ID'); ylabel('km');
+xticks(1:10); grid on;
+
+%% 9. Total Detections Bar
+figure('Name', 'Total Detections');
+bar(total_detect);
+title('Total Detections per Drone', 'FontWeight', 'bold'); 
+xlabel('Drone ID'); ylabel('Detections');
+xticks(1:10); grid on;
+
+%% 10. Avg Degree Bar
+figure('Name', 'Average Degree');
+bar(avg_deg);
+title('Avg Degree per Drone', 'FontWeight', 'bold'); 
+xlabel('Drone ID'); ylabel('Neighbors');
+xticks(1:10); grid on;
